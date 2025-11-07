@@ -1,5 +1,9 @@
 name: YouTube 新片自動推播
 
+# 給予 push 權限
+permissions:
+  contents: write  # 允許讀寫 repo 內容（commit + push）
+
 on:
   #schedule:
   #  - cron: '*/5 * * * *'
@@ -13,6 +17,8 @@ jobs:
     steps:
       - name: 拉取最新程式碼
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  # 使用內建 token
 
       - name: 設定 Git 憑證
         run: |
