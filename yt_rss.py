@@ -1,34 +1,36 @@
-# yt_rss.py - 台灣終極純淨美學版（有縮圖 + 只顯示中文時間 + 永不擋）
+# yt_rss.py - 2025 雲端記憶 + 分類推播（無 .env）
 import feedparser
 import requests
 import os
 import sys
 from datetime import datetime
 
-if not WEBHOOK:
-    print("錯誤：.env 沒填 DISCORD_WEBHOOK")
-    sys.exit(1)
-
-# 讀取雲端記憶（GitHub State）
+# 讀取雲端記憶
 seen = set()
 state_str = os.getenv("STATE_SEEN", "")
 if state_str:
     seen = set(state_str.split(","))
-
 new_seen = seen.copy()
 
-def send_discord(video):
-    # 台灣時間
+# 頻道對應 Webhook
+CHANNEL_WEBHOOKS = {
+    "UCxH2mFGJOqJ15UyCiZ7rN9w": "WEBHOOK_HUANGLING",
+    "UCXOBLGJdYA1mfhOrDwQESTg": "WEBHOOK_STANLEY",
+}
+
+def send_discord(video, webhook_url):
     published_dt = datetime.strptime(video["published"], "%Y-%m-%dT%H:%M:%S%z")
     taiwan_time = published_dt.astimezone()
     time_str = taiwan_time.strftime("%Y/%m/%d %H:%M")
 
-    # 關鍵：**粗體** + 超連結 → 點粗體時間就直接看影片！
     content = f"[**{time_str}**]({video['url']})"
 
-    r = requests.post(WEBHOOK, json={"content": content})
+    r = requests.post(webhook_url, json={
+        "content": content,
+        "allowed_mentions": {"parse": []}
+    })
     if r.status_code == 204:
-        print(f"推播成功：{video['title'][:40]}...")
+        print(f"推播成功 → {video['author']}: {video['title'][:30]}...")
     else:
         print(f"推播失敗：{r.status_code}")
 
@@ -48,7 +50,7 @@ def main():
     for cid in channels:
         webhook_key = CHANNEL_WEBHOOKS.get(cid)
         if not webhook_key:
-            print(f"警告：{cid} 沒有設定 Webhook，跳過")
+            print(f"警告：{cid} 沒有設定 Webhook")
             continue
         webhook_url = os.getenv(webhook_key)
         if not webhook_url:
@@ -80,7 +82,7 @@ def main():
         send_discord(video, webhook_url)
         new_seen.add(video_id)
 
-    # 關鍵：寫回雲端記憶！
+    # 寫回雲端記憶
     if new_seen != seen:
         print(f"更新雲端記憶：新增 {len(new_seen - seen)} 筆")
         print(f"::set-state name=STATE_SEEN::{','.join(sorted(new_seen, reverse=True)[:200])}")
@@ -89,6 +91,4 @@ def main():
         print("沒有新影片～")
 
 if __name__ == "__main__":
-
     main()
-
