@@ -23,12 +23,13 @@ jobs:
         run: |
           pip install feedparser requests --quiet
 
-      # 關鍵：載入上次執行留下的 STATE_SEEN
+      # 關鍵 1：載入上次執行的 STATE_SEEN
       - name: 載入雲端記憶
         id: load_state
         run: |
-          echo "STATE_SEEN=$(echo '${{ steps.state.outputs.STATE_SEEN }}' | tr -d ' ')" >> $GITHUB_OUTPUT
+          echo "STATE_SEEN=${{ steps.state.outputs.STATE_SEEN }}" >> $GITHUB_OUTPUT
 
+      # 關鍵 2：執行程式（傳入 STATE_SEEN）
       - name: 執行 YouTube RSS 推播
         env:
           WEBHOOK_HUANGLING: ${{ secrets.WEBHOOK_HUANGLING }}
@@ -37,7 +38,7 @@ jobs:
         run: |
           python yt_rss.py
 
-      # 關鍵：保存記憶到下次執行
+      # 關鍵 3：保存記憶（GitHub 自動處理）
       - name: 保存雲端記憶
         if: always()
         run: |
