@@ -21,14 +21,13 @@ jobs:
 
       - name: 安裝套件
         run: |
-          pip install feedparser requests python-dotenv --quiet
+          pip install feedparser requests --quiet
 
+      # 關鍵：載入上次執行留下的 STATE_SEEN
       - name: 載入雲端記憶
         id: load_state
         run: |
-          echo "STATE_SEEN=$(echo $STATE_SEEN)" >> $GITHUB_OUTPUT
-        env:
-          STATE_SEEN: ${{ steps.state.outputs.STATE_SEEN || '' }}
+          echo "STATE_SEEN=$(echo '${{ steps.state.outputs.STATE_SEEN }}' | tr -d ' ')" >> $GITHUB_OUTPUT
 
       - name: 執行 YouTube RSS 推播
         env:
@@ -38,6 +37,7 @@ jobs:
         run: |
           python yt_rss.py
 
+      # 關鍵：保存記憶到下次執行
       - name: 保存雲端記憶
         if: always()
         run: |
