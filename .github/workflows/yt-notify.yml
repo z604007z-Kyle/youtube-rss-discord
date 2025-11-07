@@ -27,7 +27,7 @@ jobs:
       - name: 載入雲端記憶
         id: load_state
         run: |
-          echo "STATE_SEEN=${{ steps.state.outputs.STATE_SEEN }}" >> $GITHUB_OUTPUT
+          echo "STATE_SEEN=${{ steps.state.outputs.STATE_SEEN || '' }}" >> $GITHUB_OUTPUT
 
       # 關鍵 2：執行程式（傳入 STATE_SEEN）
       - name: 執行 YouTube RSS 推播
