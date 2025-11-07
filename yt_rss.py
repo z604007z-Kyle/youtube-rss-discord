@@ -67,8 +67,9 @@ def main():
             continue
 
         entry = feed.entries[0]
-        video_id = entry.id.split(":", 1)[-1]
-        
+            raw_id = entry.id.split(":", 1)[-1]
+            video_id = f"yt:video:{raw_id}"  # 加上 yt:video: 前綴！
+
         if video_id in new_seen:
             continue
 
@@ -80,7 +81,7 @@ def main():
         }
         
         send_discord(video, webhook_url)
-        new_seen.add(video_id)
+        new_seen.add(video_id)  # 存完整 ID
 
     # 寫回雲端記憶
     if new_seen != seen:
@@ -92,3 +93,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
