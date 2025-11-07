@@ -1,10 +1,9 @@
 name: YouTube 新片自動推播
 
-# 每 5 分鐘檢查一次（台灣時間）
 on:
   schedule:
     - cron: '*/5 * * * *'
-  workflow_dispatch:  # 允許手動觸發
+  workflow_dispatch:
 
 jobs:
   check-and-notify:
@@ -12,31 +11,34 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      # Step 1: 拉下你的程式碼
       - name: 拉取最新程式碼
         uses: actions/checkout@v4
 
-      # Step 2: 設定 Python 環境
-      - name: 設定 Python 3.11
+      - name: 設定 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
 
-      # Step 3: 安裝套件
-      - name: 安裝必要套件
+      - name: 安裝套件
         run: |
-          python -m pip install --upgrade pip
           pip install feedparser requests python-dotenv --quiet
 
-      # Step 4: 執行主程式（讀取 GitHub Secrets）
+      - name: 載入雲端記憶
+        id: load_state
+        run: |
+          echo "STATE_SEEN=$(echo $STATE_SEEN)" >> $GITHUB_OUTPUT
+        env:
+          STATE_SEEN: ${{ steps.state.outputs.STATE_SEEN || '' }}
+
       - name: 執行 YouTube RSS 推播
         env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          WEBHOOK_HUANGLING: ${{ secrets.WEBHOOK_HUANGLING }}
+          WEBHOOK_STANLEY: ${{ secrets.WEBHOOK_STANLEY }}
+          STATE_SEEN: ${{ steps.load_state.outputs.STATE_SEEN }}
         run: |
           python yt_rss.py
 
-      # Step 5: 顯示完成訊息
-      - name: 完成通知
+      - name: 保存雲端記憶
+        if: always()
         run: |
-          echo "YouTube 推播檢查完成！"
+          echo "記憶已保存"
