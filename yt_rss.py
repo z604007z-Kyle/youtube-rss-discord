@@ -13,18 +13,12 @@ if not WEBHOOK:
     print("錯誤：.env 沒填 DISCORD_WEBHOOK")
     sys.exit(1)
 
-# ========= 測試模式 =========
-if len(sys.argv) > 1 and sys.argv[1] == "test":
-    r = requests.post(WEBHOOK, json={"content": "純淨美學版測試成功！\n有縮圖 + 中文時間 + 絕對不擋～"})
-    print("測試成功！" if r.status_code == 204 else f"失敗：{r.status_code}")
-    sys.exit()
-
-# ========= 記憶檔 =========
-seen_file = "seen.txt"
+# 讀取雲端記憶（GitHub State）
 seen = set()
-if os.path.exists(seen_file):
-    with open(seen_file, "r", encoding="utf-8") as f:
-        seen = set(line.strip() for line in f if line.strip())
+state_str = os.getenv("STATE_SEEN", "")
+if state_str:
+    seen = set(state_str.split(","))
+
 new_seen = seen.copy()
 
 def send_discord(video):
@@ -46,23 +40,28 @@ def main():
     channels = []
     try:
         with open("channels.txt", "r", encoding="utf-8") as f:
-            for raw in f:
-                line = raw.split("#")[0].strip()
-                if not line:
-                    continue
+            for line in f:
+                line = line.split("#")[0].strip()
                 if line.startswith("UC"):
-                    channels.append(("id", line))
+                    channels.append(line)
                     print(f"載入 UC: {line}")
     except FileNotFoundError:
         print("錯誤：channels.txt 不見了！")
         return
 
-    for ctype, cid in channels:
+    for cid in channels:
+        webhook_key = CHANNEL_WEBHOOKS.get(cid)
+        if not webhook_key:
+            print(f"警告：{cid} 沒有設定 Webhook，跳過")
+            continue
+        webhook_url = os.getenv(webhook_key)
+        if not webhook_url:
+            print(f"錯誤：環境變數 {webhook_key} 未設定")
+            continue
+
         url = f"https://www.youtube.com/feeds/videos.xml?channel_id={cid}"
-        
-        # 防台灣 IP 擋
         feed = feedparser.parse(url, request_headers={
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
         
         if not feed.entries:
@@ -70,29 +69,29 @@ def main():
             continue
 
         entry = feed.entries[0]
-        video_id = entry.id.split(":", 1)[-1]  # 關鍵：抓 video_id
+        video_id = entry.id.split(":", 1)[-1]
         
         if video_id in new_seen:
             continue
 
-        # 這裡一定要加 video_id 進去！
         video = {
             "title": entry.title,
             "url": entry.link,
             "published": entry.published,
-            "video_id": video_id  # 一定要有這行！
+            "author": entry.author
         }
         
-        send_discord(video)
+        send_discord(video, webhook_url)
         new_seen.add(video_id)
 
-    # 寫回 seen.txt
-    with open(seen_file, "w", encoding="utf-8") as f:
-        for vid in sorted(new_seen, reverse=True)[:200]:
-            f.write(vid + "\n")
+    # 關鍵：寫回雲端記憶！
+    if new_seen != seen:
+        print(f"更新雲端記憶：新增 {len(new_seen - seen)} 筆")
+        print(f"::set-state name=STATE_SEEN::{','.join(sorted(new_seen, reverse=True)[:200])}")
 
     if new_seen == seen:
         print("沒有新影片～")
 
 if __name__ == "__main__":
+
     main()
