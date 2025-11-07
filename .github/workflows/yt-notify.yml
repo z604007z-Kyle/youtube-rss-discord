@@ -14,6 +14,11 @@ jobs:
       - name: 拉取最新程式碼
         uses: actions/checkout@v4
 
+      - name: 設定 Git 憑證
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
       - name: 設定 Python
         uses: actions/setup-python@v5
         with:
@@ -23,24 +28,9 @@ jobs:
         run: |
           pip install feedparser requests --quiet
 
-      # 關鍵 1：載入雲端記憶（正確讀取 steps.state.outputs）
-      - name: 載入雲端記憶
-        id: load_state
-        run: |
-          echo "STATE_SEEN=${{ steps.state.outputs.STATE_SEEN || '' }}" >> $GITHUB_OUTPUT
-
-      # 關鍵 2：執行程式（傳入 STATE_SEEN）
       - name: 執行 YouTube RSS 推播
-        id: run_script
         env:
           WEBHOOK_HUANGLING: ${{ secrets.WEBHOOK_HUANGLING }}
           WEBHOOK_STANLEY: ${{ secrets.WEBHOOK_STANLEY }}
-          STATE_SEEN: ${{ steps.load_state.outputs.STATE_SEEN }}
         run: |
           python yt_rss.py
-
-      # 關鍵 3：保存記憶（GitHub 自動處理）
-      - name: 保存雲端記憶
-        if: always()
-        run: |
-          echo "記憶已保存"
