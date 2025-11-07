@@ -1,21 +1,25 @@
-# yt_rss.py - 2025 雲端記憶 + 分類推播（無 .env）
+# yt_rss.py - 2025 雲端記憶 + 分類推播（用 seen.txt + 自動 commit）
 import feedparser
 import requests
 import os
 import sys
 from datetime import datetime
 
-# 讀取雲端記憶
+# 記憶檔案
+seen_file = "seen.txt"
+
+# 讀取記憶（從 seen.txt）
 seen = set()
-state_str = os.getenv("STATE_SEEN", "")
-if state_str:
-    seen = set(state_str.split(","))
+if os.path.exists(seen_file):
+    with open(seen_file, "r", encoding="utf-8") as f:
+        seen = set(line.strip() for line in f if line.strip())
 new_seen = seen.copy()
 
 # 頻道對應 Webhook
 CHANNEL_WEBHOOKS = {
-    "UCxH2mFGJOqJ15UyCiZ7rN9w": "WEBHOOK_HUANGLING",
-    "UCXOBLGJdYA1mfhOrDwQESTg": "WEBHOOK_STANLEY",
+    "UCxH2mFGJOqJ15UyCiZ7rN9w": "WEBHOOK_HUANGLING",   # 煌靈
+    "UCXOBLGJdYA1mfhOrDwQESTg": "WEBHOOK_STANLEY",     # Stanley
+    # 想加更多？直接加一行： "UCxxx": "WEBHOOK_名字"
 }
 
 def send_discord(video, webhook_url):
@@ -23,6 +27,7 @@ def send_discord(video, webhook_url):
     taiwan_time = published_dt.astimezone()
     time_str = taiwan_time.strftime("%Y/%m/%d %H:%M")
 
+    # 粗體時間 + 點就看影片（藍色連結）
     content = f"[**{time_str}**]({video['url']})"
 
     r = requests.post(webhook_url, json={
@@ -50,7 +55,7 @@ def main():
     for cid in channels:
         webhook_key = CHANNEL_WEBHOOKS.get(cid)
         if not webhook_key:
-            print(f"警告：{cid} 沒有設定 Webhook")
+            print(f"警告：{cid} 沒有設定 Webhook，跳過")
             continue
         webhook_url = os.getenv(webhook_key)
         if not webhook_url:
@@ -67,7 +72,8 @@ def main():
             continue
 
         entry = feed.entries[0]
-        video_id = f"yt:video:{entry.id.split(':', 1)[-1]}"
+        raw_id = entry.id.split(":", 1)[-1]
+        video_id = f"yt:video:{raw_id}"  # 正確格式！
 
         if video_id in new_seen:
             continue
@@ -80,17 +86,22 @@ def main():
         }
         
         send_discord(video, webhook_url)
-        new_seen.add(video_id)  # 存完整 ID
+        new_seen.add(video_id)
 
-    # 寫回雲端記憶
+    # 寫回記憶 + 自動 commit
     if new_seen != seen:
-        print(f"更新雲端記憶：新增 {len(new_seen - seen)} 筆")
-        print(f"::set-state name=STATE_SEEN::{','.join(sorted(new_seen, reverse=True)[:200])}")
+        with open(seen_file, "w", encoding="utf-8") as f:
+            for vid in sorted(new_seen, reverse=True)[:200]:
+                f.write(vid + "\n")
+        print(f"更新記憶：新增 {len(new_seen - seen)} 筆")
 
-    if new_seen == seen:
+        # 自動 commit + push
+        commit_msg = f"更新 YouTube 記憶：新增 {len(new_seen - seen)} 筆影片 ID"
+        os.system(f'git add {seen_file}')
+        os.system(f'git commit -m "{commit_msg}"')
+        os.system('git push')
+    else:
         print("沒有新影片～")
 
 if __name__ == "__main__":
     main()
-
-
