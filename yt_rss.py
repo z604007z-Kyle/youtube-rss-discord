@@ -4,10 +4,6 @@ import requests
 import os
 import sys
 from datetime import datetime
-from dotenv import load_dotenv
-
-load_dotenv()
-WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 
 if not WEBHOOK:
     print("錯誤：.env 沒填 DISCORD_WEBHOOK")
@@ -95,3 +91,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
