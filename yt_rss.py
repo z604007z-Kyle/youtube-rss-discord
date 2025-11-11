@@ -25,7 +25,7 @@ CHANNEL_WEBHOOKS = {
 def send_discord(video, webhook_url):
     published_dt = datetime.strptime(video["published"], "%Y-%m-%dT%H:%M:%S%z")
     taiwan_time = published_dt.astimezone()
-    time_str = taiwan_time.strftime("%Y/%m/%d %H:%M")
+    time_str = taiwan_time.strftime("%Y/%m/%d")
 
     # 粗體時間 + 點就看影片（藍色連結）
     content = f"[**{time_str}**]({video['url']})"
@@ -105,3 +105,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
