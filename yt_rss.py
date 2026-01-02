@@ -91,7 +91,7 @@ def main():
     # 寫回記憶 + 自動 commit
     if new_seen != seen:
         with open(seen_file, "w", encoding="utf-8") as f:
-            for vid in sorted(new_seen, reverse=True)[:200]:
+            for vid in sorted(new_seen, reverse=True):
                 f.write(vid + "\n")
         print(f"更新記憶：新增 {len(new_seen - seen)} 筆")
 
@@ -105,6 +105,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
