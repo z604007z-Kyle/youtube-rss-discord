@@ -38,5 +38,14 @@ jobs:
         env:
           WEBHOOK_HUANGLING: ${{ secrets.WEBHOOK_HUANGLING }}
           WEBHOOK_STANLEY: ${{ secrets.WEBHOOK_STANLEY }}
+        run: python yt_rss.py
+
+      - name: Commit seen.txt if changed
         run: |
-          python yt_rss.py
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add seen.txt || true
+          git diff --staged --quiet || git commit -m "更新 YouTube 記憶：新增影片 ID"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
