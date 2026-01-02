@@ -88,20 +88,22 @@ def main():
         send_discord(video, webhook_url)
         new_seen.add(video_id)
 
-    # 寫回記憶（移除自動 commit）
-    if new_seen != seen:
-        with open(seen_file, "w", encoding="utf-8") as f:
-            for vid in sorted(new_seen):  # 移除 [:200]，全部保留
-                f.write(vid + "\n")
-        print(f"更新記憶：新增 {len(new_seen - seen)} 筆")
-        # 移除下面這三行 git 指令
-        # os.system(f'git add {seen_file}')
-        # os.system(f'git commit -m "{commit_msg}"')
-        # os.system('git push')
-    else:
-        print("沒有新影片～")
+    # 寫回記憶 + 自動 commit
+    if new_seen != seen:
+        with open(seen_file, "w", encoding="utf-8") as f:
+            for vid in sorted(new_seen, reverse=True)[:200]:
+                f.write(vid + "\n")
+        print(f"更新記憶：新增 {len(new_seen - seen)} 筆")
+        # 自動 commit + push
+        commit_msg = f"更新 YouTube 記憶：新增 {len(new_seen - seen)} 筆影片 ID"
+        os.system(f'git add {seen_file}')
+        os.system(f'git commit -m "{commit_msg}"')
+        os.system('git push')
+    else:
+        print("沒有新影片～")
 
 if __name__ == "__main__":
     main()
+
 
 
