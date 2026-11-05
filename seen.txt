@@ -148,6 +148,7 @@ yt:video:video:riMSCZx7i-I
 yt:video:video:rhz-KSTrE84
 yt:video:video:rftr5eNCH7c
 yt:video:video:rfZB76-qENM
+yt:video:video:rd6sdwbLzFY
 yt:video:video:rcmVfxkOpc4
 yt:video:video:rYExrY7WNog
 yt:video:video:rY1-b27eOGU
@@ -1077,6 +1078,7 @@ yt:video:video:5Q5IIrl0gJI
 yt:video:video:5Mi9SGfQkPg
 yt:video:video:5K7gi25lJvI
 yt:video:video:5IDgGB87AHM
+yt:video:video:5FiRau8gafE
 yt:video:video:5EgPECEcBAs
 yt:video:video:5A0pD90FQ0I
 yt:video:video:590dgCN-grU
